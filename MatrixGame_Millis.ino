@@ -36,7 +36,8 @@ void lcd_dificulty(int pos)  // lcd during choose_dificulty
     lcd.setCursor(12,1);
     lcd.print("Time");
   }
-  else {
+  else 
+  {
     lcd.print("Number");
     lcd.setCursor(11,1);
     lcd.print(">Time");
@@ -44,6 +45,24 @@ void lcd_dificulty(int pos)  // lcd during choose_dificulty
 }
 
 bool choose_dificulty()   // function which let the user to choose complexity
+{
+  int posX = 0,valX;
+  bool movedX = false;
+  lcd_play_again(posX);
+  unsigned long prev_millis = millis();
+  int period = 200;
+  while(true)  
+  {
+    if (millis() > prev_millis + period)
+    {
+      int button_state = digitalRead(SW_Pin);
+      valX = analogRead(joyX);
+      if (valX < 300 && movedX == false)
+      {
+        posX--;
+        movedX = true;
+      }
+    else if (valX > 700 && movedX == false)
     {
       posX++;
       movedX = true;
@@ -84,21 +103,12 @@ void setup()
   analogWrite(V0_Pin, 90);
   digitalWrite(SW_Pin, HIGH);   //SW_PIN has the value 1 when is pressed and reverse
   lcd.clear() // clear the lcd
-  int period = 5000; // the period in ms we want to print the text on the lcd
-  unsigned long previous_millis = millis();   // the time we print the text on the lcd
-  while (true)
-  {
-    if (millis() > previous_millis + period) // wait till the text will be printed the period set before
-    {
-      time_game = choose_dificulty();  // let the user to choose complexity
-      next_level();    // initialize the first level
-      break;
-    }
-    lcd.setCursor(3,0);
-    lcd.print("Welcome to");
-    lcd.setCursor(0,1);
-    lcd.print("Test your Memory!");
-  }
+  lcd.setCursor(3,0);
+  lcd.print("Welcome to");
+  lcd.setCursor(0,1);
+  lcd.print("Test your Memory!");
+  time_game = choose_dificulty();  // let the user to choose complexity
+  next_level();    // initialize the first level
 }
 
 void clear_matrix(bool matrix[8][8])   // clear the needed matrix
@@ -290,52 +300,30 @@ void record() // function which verifies if the user has set a new record or not
   EEPROM.get(ee_adress, bestscore);
   if (bestscore > score)
   {
-    int period = 2500;
-    unsigned long previous_millis = millis();
-    while (true)
-    {
-      if (millis() > previous_millis + period)
-      {
-        lcd.clear();
-        lcd.print("Your Score:");
-        lcd.print(score, DEC);
-        if (millis() > previous_millis + period*2)
-        break;
-      }
-      else
-      { 
-        lcd.clear();
-        lcd.setCursor(1,0);
-        lcd.print("Best Score:");
-        lcd.print(bestscore, DEC);
-      }
-    }
+    lcd.clear();
+    lcd.print("Your Score:");
+    lcd.print(score, DEC);
+    delay(2500); // let the user to read the text from lcd
+    lcd.clear();
+    lcd.setCursor(1,0);
+    lcd.print("Best Score:");
+    lcd.print(bestscore, DEC);
+    delay(2500); // let the user to read the text from lcd
   }
   else 
   {
     for (int i = 0 ; i < EEPROM.length() ; i++)  
       EEPROM.write(i, 0);
     EEPROM.put(ee_adress, score);
-    int period = 2500;
-    unsigned long previous_millis = millis();
+    lcd.setCursor(4,0);
+    lcd.print("You Set");
+    lcd.setCursor(1,1);
+    lcd.print("A New Record");
+    delay(2500); // let the user to read the text from lcd
     lcd.clear();
-    while (true)
-    {
-      if (millis() > previous_millis + period)
-      {
-        lcd.clear();
-        lcd.print("Your Record:");
-        lcd.print(score, DEC);
-        if (millis() > previous_millis + period*2)
-          break;
-      }
-      else
-      {
-        lcd.setCursor(4,0);
-        lcd.print("You Set");
-        lcd.setCursor(1,1);
-        lcd.print("A New Record");
-      }
+    lcd.print("Your Record:");
+    lcd.print(score, DEC);
+    delay(2500); // let the user to read the text from lcd
     }
   }
 }
@@ -363,6 +351,37 @@ void play_again()   // execute the user's choose from choose_play_again
   }
 }
 
+void update_matrix()  // is used between levels and game events
+{
+  for (int i = 0; i < 8; i++)
+    for (int j = 0; j < 8; j++)
+    {
+      unsigned long previous_millis = millis();
+      while (true)
+      {
+        lcd.clear();
+        if (millis() > previous_millis + 30)
+        {
+          lc.setLed(0, j, i, true);
+          break;
+        }
+      }
+    }
+  for (int i = 0; i < 8; i++)
+    for (int j = 0; j < 8; j++)
+    {
+      unsigned long previous_millis = millis();
+      while (true)
+      {
+        lcd.clear();
+        if (millis() > previous_millis + 30)
+        {
+          lc.setLed(0, j, i, false);
+          break;
+        }
+      }
+    }  
+}
 void next_level()   // initialize the next level
 {
   tone(buzzer,3000,800);  // notify the user that he passed the level
@@ -378,79 +397,19 @@ void next_level()   // initialize the next level
   lives = 5;
   if (!user_wins)
   {
-    for (int i = 0; i < 8; i++)
-      for (int j = 0; j < 8; j++)
-        {
-          int period = 30;
-          unsigned long previous_millis = millis();
-          while (true)
-          {
-            if (millis() > previous_millis + period)
-            {
-              lc.setLed(0, j, i, true);
-              break;
-            }
-            lcd.clear();
-            lcd.setCursor(3,0);
-            lcd.print("Get Ready!");
-          }
-        }
-    for (int i = 0; i < 8; i++)
-      for (int j = 0; j < 8; j++)
-        {
-          int period = 30;
-          unsigned long previous_millis = millis();
-          while (true)
-          {
-            if (millis() > previous_millis + period)
-            {
-              lc.setLed(0, j, i, false);
-              break;
-            }
-            lcd.clear();
-            lcd.setCursor(3,0);
-            lcd.print("Get Ready!");
-          }
-        }  
+    lcd.clear();
+    lcd.setCursor(3,0);
+    lcd.print("Get Ready!");
+    update_matrix(); 
   }
 }
 
 void game_over()  // notify the user that he lost and the game is over
 {
-  for (int i = 0; i < 8; i++)
-    for (int j = 0; j < 8; j++)
-      {
-        int period = 30;
-        unsigned long previous_millis = millis();
-        while (true)
-        {
-          if (millis() > previous_millis + period)
-          {
-            lc.setLed(0, j, i, true);
-            break;
-          }
-          lcd.clear();
-          lcd.setCursor(4,0);
-          lcd.print("Game Over");
-        }
-      }
-  for (int i = 0; i < 8; i++)
-    for (int j = 0; j < 8; j++)
-      {
-        int period = 30;
-        unsigned long previous_millis = millis();
-        while (true)
-        {
-          if (millis() > previous_millis + period)
-          {
-            lc.setLed(0, j, i, false);
-            break;
-          }
-          lcd.clear();
-          lcd.setCursor(4,0);
-          lcd.print("Game Over");
-        }
-      }
+  lcd.clear();
+  lcd.setCursor(4,0);
+  lcd.print("Game Over");
+  update_matrix();
   record();  // check for a record
   play_again(); // ask user to play again
 }
@@ -463,7 +422,7 @@ void level()
   lcd.setCursor(5,0);
   lcd.print("Level ");
   lcd.print(nr_level, DEC);
-  delay(time_print); //// let the user to memorise the points
+  delay(time_print);  // give time to memorise the points
   if (user_guessing()) // if user guessed the points go to next level otherwise he lost
     next_level();
   else
@@ -474,46 +433,13 @@ void loop()
 {
   if (!user_wins)  // if user hasn't won yet play next level 
     level();
-  else   // notigy the user that he passed the game
+  else   // notify the user that he passed the game
   {
-    for (int i = 0; i < 8; i++)
-      for (int j = 0; j < 8; j++)
-        {
-          int period = 30;
-          unsigned long previous_millis = millis();
-          while (true)
-          {
-            if (millis() > previous_millis + period)
-            {
-              lc.setLed(0, j, i, false);
-              break;
-            }
-            lcd.clear();
-            lcd.setCursor(2,0);
-            lcd.print("You Have Won!");
-            lcd.setCursor(0,1);
-            lcd.print("Congratulations");
-          }
-      }
-    for (int i = 0; i < 8; i++)
-      for (int j = 0; j < 8; j++)
-         {
-          int period = 30;
-          unsigned long previous_millis = millis();
-          while (true)
-          {
-            if (millis() > previous_millis + period)
-            {
-              lc.setLed(0, j, i, false);
-              break;
-            }
-            lcd.clear();
-            lcd.setCursor(2,0);
-            lcd.print("You Have Won!"); 
-            lcd.setCursor(0,1);
-            lcd.print("Congratulations");
-          }
-      }
+    lcd.setCursor(2,0);
+    lcd.print("You Have Won!");
+    lcd.setCursor(0,1);
+    lcd.print("Congratulations");
+    update_matrix();
     record();  // check for a record
     play_again(); // ask user to play again
   }
