@@ -20,10 +20,10 @@ const int joyY = A1;
 // Game Variables
 bool init_matrix[8][8];  // initial matrix of every level
 bool user_matrix[8][8];  // user matrix during a level 
-int nr_points = 4, lives = 5, nr_level = 0, score = 0;
-bool user_wins = false;   // specifies if the user has passed the game or not
-bool time_game = false;   // specifies if the game complexity (number - false/ time - true)
-int time_print = 5500;    // the default time used to remember points 
+int nr_points, lives, nr_level, score;
+bool user_wins;   // specifies if the user has passed the game or not
+bool time_game;   // specifies if the game complexity (number - false/ time - true)
+int time_print;    // time to remember points 
 
 void lcd_dificulty(int pos)  // lcd during choose_dificulty
 {
@@ -49,13 +49,13 @@ bool choose_dificulty()   // function which let the user to choose complexity
   int posX = 0,valX;
   bool movedX = false;
   lcd_play_again(posX);
+  int button_state = digitalRead(SW_Pin);
   unsigned long prev_millis = millis();
-  int period = 200;
-  while(true)  
+  while(button_state)  
   {
-    if (millis() > prev_millis + period)
+    button_state = digitalRead(SW_Pin);
+    if (millis() > prev_millis + 200)
     {
-      int button_state = digitalRead(SW_Pin);
       valX = analogRead(joyX);
       if (valX < 300 && movedX == false)
       {
@@ -71,19 +71,16 @@ bool choose_dificulty()   // function which let the user to choose complexity
     if (posX == 2) posX = 0;
     if (posX == -1) posX = 1;
     lcd_dificulty(posX);
-    if (!button_state)
-    {
-      if(posX == 0)
-      {
-        nr_points -= 2;
-        return false;
-      }
-      else 
-        return true;
-    }
     prev_millis = millis();
-   }
+    }
   }
+  if(posX == 0)
+  {
+    nr_points -= 2;
+    return false;
+  }
+  else 
+    return true;
 }
 
 void next_level();
@@ -100,10 +97,14 @@ void setup()
   lc.setIntensity(0, 5); // sets brightness (0~15 possible values)
   lc.clearDisplay(0); // clear screen
   lcd.begin(16, 2);   // marks the space of the lcd
-  srand(time(NULL));  // need it to generates random numbers
   pinMode(V0_Pin, OUTPUT); // setting pwm pin as an output
   analogWrite(V0_Pin, 90);
   digitalWrite(SW_Pin, HIGH);   //SW_PIN has the value 1 when is pressed and reverse
+  srand(time(NULL));  // need it to generates random numbers
+  int nr_points = 4, lives = 5, nr_level = 0, score = 0;
+  bool user_wins = false;   
+  bool time_game = false;   
+  int time_print = 5500;    
   lcd.clear(); // clear the lcd
   lcd.setCursor(3,0);
   lcd.print("Welcome to");
@@ -160,16 +161,16 @@ void printing(bool matrix[8][8])  // print the matrix
 
 bool user_move(int &posX, int &posY)    // let the user to move on the matrix and choos points he remembered
 {
-  int valX, valY;
+  int valX, valY,button_state;
   bool movedX = false, movedY = false;
   unsigned long prev_millis = millis();
-  int period = 200;
-  while(true)  
+  button_state = 1;
+  while(button_state)  
   {
-    if (millis() > prev_millis + period)
+    lc.setLed(0, posX, posX, false);
+    if (millis() > prev_millis + 150)
     {
-        lc.setLed(0, posX, posX, false);
-      int button_state = digitalRead(SW_Pin);
+      button_state = digitalRead(SW_Pin);
       valX = analogRead(joyX);
       valY = analogRead(joyY);
       if (valY < 300 && movedY == false)
@@ -199,9 +200,6 @@ bool user_move(int &posX, int &posY)    // let the user to move on the matrix an
       if (posY == -1) posY = 7;
       if (posX == 8) posX = 0;
       if (posX == -1) posX = 7;
-
-      printing(user_matrix);
-      lc.setLed(0, posY, posX, true);
       if (!button_state)
       {
         if (init_matrix[posX][posY] == true)
@@ -214,6 +212,8 @@ bool user_move(int &posX, int &posY)    // let the user to move on the matrix an
       }
       prev_millis = millis();
     }
+    printing(user_matrix);
+    lc.setLed(0, posY, posX, true);
   }
 }
 
@@ -226,12 +226,20 @@ bool user_guessing()    // a function which verifies even the user guessed the p
   {
     if (user_move(posX, posY))
     {
+      tone(buzzer, 2000, 200);
       nr_guessed++;
       score += nr_guessed * nr_level;
       posX = 0, posY = 0;
     }
     else 
+    {
+      for (int i = 1; i >= 0; i--)  // notify the user that he lost a live-point
+      {
+        tone(buzzer,i*3000 + 500,100);
+        delay(100); // need it to wait the first sound 
+      }
       lives--;
+    }
     lcd_during_game();
   }
   if (lives == 0)
@@ -261,15 +269,15 @@ void lcd_play_again(int pos)   // lcd during choose_play_again
 bool choose_play_again()  // let the user to choose to play again or not
 {
   int posX = 0,valX;
+  int button_state = digitalRead(SW_Pin);
   bool movedX = false;
   lcd_play_again(posX);
   unsigned long prev_millis = millis();
-  int period = 200;
-  while(true)  
+  while(button_state)  
   {
-    if (millis() > prev_millis + period)
+    button_state = digitalRead(SW_Pin);
+    if (millis() > prev_millis + 200)
     {
-      int button_state = digitalRead(SW_Pin);
       valX = analogRead(joyX);
       if (valX < 300 && movedX == false)
       {
@@ -285,16 +293,14 @@ bool choose_play_again()  // let the user to choose to play again or not
       if (posX == 2) posX = 0;
       if (posX == -1) posX = 1;
       lcd_play_again(posX);
-      if (!button_state)
-      {
-        if(posX == 0)
-          return true;
-        else 
-          return false;
-      }
       prev_millis = millis();
     }
   }
+  tone(buzzer, 3000, 50); // notify that user has choosen 
+  if(posX == 0)
+    return true;
+  else 
+    return false;
 }
 
 void record() // function which verifies if the user has set a new record or not
@@ -345,12 +351,44 @@ void play_again()   // execute the user's choose from choose_play_again
   else
   {
     lcd.clear();
-    while(true)   /// imitation of power off 
+    lcd.setCursor(2,0);
+    lcd.print("See You Soon!");
+    delay(2500); // let the user to read from lcd
+    lcd.clear();
+    lcd.setCursor(1,0);
+    lcd.print("Press to start");
+    lcd.setCursor(3,1);
+    lcd.print("the game");
+    int button_state = digitalRead(SW_Pin);
+    bool scroll = false;
+    int counter = 16;
+    while(button_state)
     {
-      lcd.setCursor(2,0);
-      lcd.print("See You Soon!");
+      button_state = digitalRead(SW_Pin);
+      if(!scroll)
+      {
+        counter++;
+        lcd.scrollDisplayRight();
+        delay(500);
+        if(counter == 32)
+        {
+          scroll = !scroll;
+          counter = 0;
+        }
+      }
+      else
+      {
+        counter++;
+        lcd.scrollDisplayLeft(); 
+        delay(500);
+        if(counter == 32)
+        {
+          scroll = !scroll;
+          counter = 0;
+        }
+      }
     }
-    /// still need to put a power on button which will
+    setup();
   }
 }
 
@@ -385,7 +423,11 @@ void update_matrix()  // is used between levels and game events
 }
 void next_level()   // initialize the next level
 {
-  tone(buzzer,3000,800);  // notify the user that he passed the level
+  for (int i = 1; i <= 4; i++)
+  {
+    tone(buzzer,i*500 + 1000,100);  // notify the user that he passed the level
+    delay(100);
+  } 
   clear_matrix(init_matrix);
   clear_matrix(user_matrix);
   if (time_game)
@@ -407,6 +449,11 @@ void next_level()   // initialize the next level
 
 void game_over()  // notify the user that he lost and the game is over
 {
+  for (int i = 8; i > 0; i--)
+  {
+    tone(buzzer,(i)*500,100);
+    delay(100); // need it to wait the first sound 
+  }
   lcd.clear();
   lcd.setCursor(4,0);
   lcd.print("Game Over");
