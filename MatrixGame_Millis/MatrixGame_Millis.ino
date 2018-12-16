@@ -83,7 +83,7 @@ bool choose_dificulty()   // function which let the user to choose complexity
     return true;
 }
 
-void next_level();
+//void next_level();
 
 void setup()
 {
@@ -101,10 +101,10 @@ void setup()
   analogWrite(V0_Pin, 90);
   digitalWrite(SW_Pin, HIGH);   //SW_PIN has the value 1 when is pressed and reverse
   srand(time(NULL));  // need it to generates random numbers
-  int nr_points = 4, lives = 5, nr_level = 0, score = 0;
-  bool user_wins = false;   
-  bool time_game = false;   
-  int time_print = 5500;    
+  nr_points = 5, lives = 5, score = 0, nr_level = 0;
+  user_wins = false;   
+  time_game = false;   
+  time_print = 5500;    
   lcd.clear(); // clear the lcd
   lcd.setCursor(3,0);
   lcd.print("Welcome to");
@@ -355,9 +355,9 @@ void play_again()   // execute the user's choose from choose_play_again
     lcd.print("See You Soon!");
     delay(2500); // let the user to read from lcd
     lcd.clear();
-    lcd.setCursor(1,0);
+    lcd.setCursor(-14,0);
     lcd.print("Press to start");
-    lcd.setCursor(3,1);
+    lcd.setCursor(-12,1);
     lcd.print("the game");
     int button_state = digitalRead(SW_Pin);
     bool scroll = false;
@@ -380,7 +380,6 @@ void play_again()   // execute the user's choose from choose_play_again
       {
         counter++;
         lcd.scrollDisplayLeft(); 
-        delay(500);
         if(counter == 32)
         {
           scroll = !scroll;
@@ -388,6 +387,7 @@ void play_again()   // execute the user's choose from choose_play_again
         }
       }
     }
+    lcd.clear();
     setup();
   }
 }
