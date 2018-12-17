@@ -337,6 +337,25 @@ void record() // function which verifies if the user has set a new record or not
   }
 }
 
+void scroll(char* s, int &my_cursor)
+{
+  int txt_size = strlen(s);
+  if (my_cursor == 0)
+  {
+    my_cursor = 16;
+    lcd.clear();
+  }
+  lcd.setCursor(0,0);
+
+  for(int c = my_cursor; c <= txt_size - 1; c++)
+    lcd.print(s[c]);
+
+   for(int c = 0; c < my_cursor; c++)
+    lcd.print(s[c]);
+    
+  my_cursor--;
+}
+
 void play_again()   // execute the user's choose from choose_play_again
 {
   if (choose_play_again())
@@ -354,38 +373,14 @@ void play_again()   // execute the user's choose from choose_play_again
     lcd.setCursor(2,0);
     lcd.print("See You Soon!");
     delay(2500); // let the user to read from lcd
-    lcd.clear();
-    lcd.setCursor(-14,0);
-    lcd.print("Press to start");
-    lcd.setCursor(-12,1);
-    lcd.print("the game");
+    char* s = " Press to start ";
+    int my_cursor = 16;
     int button_state = digitalRead(SW_Pin);
-    bool scroll = false;
-    int counter = 16;
     while(button_state)
     {
       button_state = digitalRead(SW_Pin);
-      if(!scroll)
-      {
-        counter++;
-        lcd.scrollDisplayRight();
-        delay(500);
-        if(counter == 32)
-        {
-          scroll = !scroll;
-          counter = 0;
-        }
-      }
-      else
-      {
-        counter++;
-        lcd.scrollDisplayLeft(); 
-        if(counter == 32)
-        {
-          scroll = !scroll;
-          counter = 0;
-        }
-      }
+      scroll(s, my_cursor);
+      delay(350);
     }
     lcd.clear();
     setup();
