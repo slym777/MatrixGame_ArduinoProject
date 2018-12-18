@@ -4,14 +4,14 @@
 #include <stdlib.h>   // library for random function
 #include <EEPROM.h>   //need EEPROM to store the best score
 #define V0_Pin 5 // PWN instead of Potentiometer
-#define SW_Pin 6 // Joystick's button
+#define SW_Pin 2 // Joystick's button
 
-LedControl lc = LedControl(4, 3, 2, 1); //DIN, CLK, LOAD, No. DRIVER - setting Driver for Matrix
+LedControl lc = LedControl(12, 11, 10, 1); //DIN, CLK, LOAD, No. DRIVER - setting Driver for Matrix
 
-const int RS = 12, E = 11, D4 = 13, D5 = 8, D6 = 9, D7 = 10; // setings for LCD
+const int RS = 4, E = 3, D4 = 6, D5 = 7, D6 = 8, D7 = 9; // setings for LCD
 LiquidCrystal lcd(RS, E, D4, D5, D6, D7);
 
-const int buzzer = 7; // pin for buzzer
+const int buzzer = 13; // pin for buzzer
 
 // JOYSTICK
 const int joyX = A0;
@@ -48,7 +48,6 @@ bool choose_dificulty()   // function which let the user to choose complexity
 {
   int posX = 0,valX;
   bool movedX = false;
-  lcd_play_again(posX);
   int button_state = digitalRead(SW_Pin);
   unsigned long prev_millis = millis();
   while(button_state)  
@@ -83,8 +82,6 @@ bool choose_dificulty()   // function which let the user to choose complexity
     return true;
 }
 
-//void next_level();
-
 void setup()
 {
   pinMode(buzzer, OUTPUT);      // setting buzzer pin as output
@@ -100,11 +97,11 @@ void setup()
   pinMode(V0_Pin, OUTPUT); // setting pwm pin as an output
   analogWrite(V0_Pin, 90);
   digitalWrite(SW_Pin, HIGH);   //SW_PIN has the value 1 when is pressed and reverse
-  srand(time(NULL));  // need it to generates random numbers
-  nr_points = 5, lives = 5, score = 0, nr_level = 0;
+  randomSeed(analogRead(3));
+  nr_points = 4, lives = 5, score = 0, nr_level = 0;
   user_wins = false;   
   time_game = false;   
-  time_print = 5500;    
+  time_print = 7000;    
   lcd.clear(); // clear the lcd
   lcd.setCursor(3,0);
   lcd.print("Welcome to");
@@ -139,8 +136,8 @@ void random_matrix()   // a function which generate random points on the matrix 
   int k = nr_points;
   while (k > 0)
   { 
-    int x = rand() % 8;
-    int y = rand() % 8;
+    int x = random(8);
+    int y = random(8);
     if (!init_matrix[x][y])
     {
       init_matrix[x][y] = true;
@@ -200,6 +197,7 @@ bool user_move(int &posX, int &posY)    // let the user to move on the matrix an
       if (posY == -1) posY = 7;
       if (posX == 8) posX = 0;
       if (posX == -1) posX = 7;
+      printing(user_matrix);
       if (!button_state)
       {
         if (init_matrix[posX][posY] == true)
@@ -212,7 +210,6 @@ bool user_move(int &posX, int &posY)    // let the user to move on the matrix an
       }
       prev_millis = millis();
     }
-    printing(user_matrix);
     lc.setLed(0, posY, posX, true);
   }
 }
@@ -439,6 +436,7 @@ void next_level()   // initialize the next level
     lcd.setCursor(3,0);
     lcd.print("Get Ready!");
     update_matrix(); 
+    lcd.clear();
   }
 }
 
