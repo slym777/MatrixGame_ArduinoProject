@@ -165,7 +165,7 @@ bool user_move(int &posX, int &posY)    // let the user to move on the matrix an
   while(button_state)  
   {
     lc.setLed(0, posX, posX, false);
-    if (millis() > prev_millis + 150)
+    if (millis() > prev_millis + 100)
     {
       button_state = digitalRead(SW_Pin);
       valX = analogRead(joyX);
@@ -426,7 +426,7 @@ void next_level()   // initialize the next level
     time_print -= 500;
   else
     nr_points++;
-  if (nr_level == 10)
+  if (nr_level == 11)
     user_wins = true;
   nr_level++;
   lives = 5;
