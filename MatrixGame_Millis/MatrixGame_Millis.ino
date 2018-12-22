@@ -1,14 +1,12 @@
 #include <LedControl.h>  // library for Driver
 #include <LiquidCrystal.h> // library for LCD
-#include <time.h>     // library for random function
-#include <stdlib.h>   // library for random function
 #include <EEPROM.h>   //need EEPROM to store the best score
 #define V0_Pin 5 // PWN instead of Potentiometer
 #define SW_Pin 2 // Joystick's button
 
 LedControl lc = LedControl(12, 11, 10, 1); //DIN, CLK, LOAD, No. DRIVER - setting Driver for Matrix
 
-const int RS = 4, E = 3, D4 = 6, D5 = 7, D6 = 8, D7 = 9; // setings for LCD
+const int RS = 3, E = 4, D4 = 6, D5 = 7, D6 = 8, D7 = 9; // setings for LCD
 LiquidCrystal lcd(RS, E, D4, D5, D6, D7);
 
 const int buzzer = 13; // pin for buzzer
@@ -97,7 +95,7 @@ void setup()
   pinMode(V0_Pin, OUTPUT); // setting pwm pin as an output
   analogWrite(V0_Pin, 90);
   digitalWrite(SW_Pin, HIGH);   //SW_PIN has the value 1 when is pressed and reverse
-  randomSeed(analogRead(3));
+  randomSeed(analogRead(3));    // used to generate random numbers
   nr_points = 4, lives = 5, score = 0, nr_level = 0;
   user_wins = false;   
   time_game = false;   
@@ -156,7 +154,7 @@ void printing(bool matrix[8][8])  // print the matrix
         lc.setLed(0,j,i,false);
 }
 
-bool user_move(int &posX, int &posY)    // let the user to move on the matrix and choos points he remembered
+bool user_move(int &posX, int &posY)    // let the user to move on the matrix and choose points that he remembered
 {
   int valX, valY,button_state;
   bool movedX = false, movedY = false;
@@ -223,17 +221,17 @@ bool user_guessing()    // a function which verifies even the user guessed the p
   {
     if (user_move(posX, posY))
     {
-      tone(buzzer, 2000, 200);
+      tone(buzzer, 2000, 200);  // notify thr user that he guessed a point
       nr_guessed++;
       score += nr_guessed * nr_level;
-      posX = 0, posY = 0;
+      posX = 0, posY = 0;    // if he guessed the point that he will start from initial position
     }
     else 
     {
       for (int i = 1; i >= 0; i--)  // notify the user that he lost a live-point
       {
         tone(buzzer,i*3000 + 500,100);
-        delay(100); // need it to wait the first sound 
+        delay(100); // need it to wait the running sound (as it cannot run in paralel)
       }
       lives--;
     }
@@ -293,7 +291,7 @@ bool choose_play_again()  // let the user to choose to play again or not
       prev_millis = millis();
     }
   }
-  tone(buzzer, 3000, 50); // notify that user has choosen 
+  tone(buzzer, 3000, 50); // notify that user has choosen an option
   if(posX == 0)
     return true;
   else 
@@ -304,8 +302,8 @@ void record() // function which verifies if the user has set a new record or not
 {
   int bestscore = 0;
   int ee_adress = 0;
-  EEPROM.get(ee_adress, bestscore);
-  if (bestscore > score)
+  EEPROM.get(ee_adress, bestscore);  // get the best score from EEPROM
+  if (bestscore > score)    // check for a new record
   {
     lcd.clear();
     lcd.print("Your Score:");
@@ -320,8 +318,8 @@ void record() // function which verifies if the user has set a new record or not
   else 
   {
     for (int i = 0 ; i < EEPROM.length() ; i++)  
-      EEPROM.write(i, 0);
-    EEPROM.put(ee_adress, score);
+      EEPROM.write(i, 0);  // clear the EEPROM
+    EEPROM.put(ee_adress, score);  // put the new record on EEPROM
     lcd.setCursor(4,0);
     lcd.print("You Set");
     lcd.setCursor(1,1);
@@ -334,7 +332,7 @@ void record() // function which verifies if the user has set a new record or not
   }
 }
 
-void scroll(char* s, int &my_cursor)
+void scroll(char* s, int &my_cursor)  //  function which make a string to scroll to the right
 {
   int txt_size = strlen(s);
   if (my_cursor == 0)
@@ -343,13 +341,10 @@ void scroll(char* s, int &my_cursor)
     lcd.clear();
   }
   lcd.setCursor(0,0);
-
   for(int c = my_cursor; c <= txt_size - 1; c++)
     lcd.print(s[c]);
-
    for(int c = 0; c < my_cursor; c++)
-    lcd.print(s[c]);
-    
+    lcd.print(s[c]);    
   my_cursor--;
 }
 
@@ -373,44 +368,30 @@ void play_again()   // execute the user's choose from choose_play_again
     char* s = " Press to start ";
     int my_cursor = 16;
     int button_state = digitalRead(SW_Pin);
-    while(button_state)
+    while(button_state)  // the text will scroll until the user 
     {
       button_state = digitalRead(SW_Pin);
       scroll(s, my_cursor);
-      delay(350);
+      delay(350); // let the user to read the scrolling text
     }
     lcd.clear();
     setup();
   }
 }
 
-void update_matrix()  // is used between levels and game events
+void update_matrix()  // is used between levels and game events 
 {
   for (int i = 0; i < 8; i++)
     for (int j = 0; j < 8; j++)
     {
-      unsigned long previous_millis = millis();
-      while (true)
-      {
-        if (millis() > previous_millis + 30)
-        {
-          lc.setLed(0, j, i, true);
-          break;
-        }
-      }
+      lc.setLed(0, j, i, true);
+      delay(30);   // give the user time to notice the changes (does not affect the game as it is between the levels)
     }
   for (int i = 0; i < 8; i++)
     for (int j = 0; j < 8; j++)
     {
-      unsigned long previous_millis = millis();
-      while (true)
-      {
-        if (millis() > previous_millis + 30)
-        {
-          lc.setLed(0, j, i, false);
-          break;
-        }
-      }
+      lc.setLed(0, j, i, false);
+      delay(30); // give the user time to notice the changes (does not affect the game as it is between the levels)
     }  
 }
 void next_level()   // initialize the next level
@@ -418,23 +399,23 @@ void next_level()   // initialize the next level
   for (int i = 1; i <= 4; i++)
   {
     tone(buzzer,i*500 + 1000,100);  // notify the user that he passed the level
-    delay(100);
+    delay(100); // need it to wait the running sound (as it cannot run in paralel) 
   } 
-  clear_matrix(init_matrix);
-  clear_matrix(user_matrix);
-  if (time_game)
-    time_print -= 500;
+  clear_matrix(init_matrix);   // clear matrix
+  clear_matrix(user_matrix);   // clear matrix
+  if (time_game) 
+    time_print -= 500;   // decrease time print of the points each level
   else
-    nr_points++;
-  if (nr_level == 11)
+    nr_points++;  // increase number of points each level
+  if (nr_level == 11)   // when the user pass the 10 lvl he wins
     user_wins = true;
   nr_level++;
   lives = 5;
-  if (!user_wins)
+  if (!user_wins)  
   {
     lcd.clear();
     lcd.setCursor(3,0);
-    lcd.print("Get Ready!");
+    lcd.print("Get Ready!");  // notify the user to be ready for the next level
     update_matrix(); 
     lcd.clear();
   }
@@ -445,19 +426,19 @@ void game_over()  // notify the user that he lost and the game is over
   for (int i = 8; i > 0; i--)
   {
     tone(buzzer,(i)*500,100);
-    delay(100); // need it to wait the first sound 
+    delay(100);  // need it to wait the running sound (as it cannot run in paralel)
   }
   lcd.clear();
   lcd.setCursor(4,0);
   lcd.print("Game Over");
-  update_matrix();
+  update_matrix(); 
   record();  // check for a record
   play_again(); // ask user to play again
 }
 
 void level()
 {
-  random_matrix();  // initialize the matrix with points that user has to remember
+  random_matrix();  // initialize the matrix with a spceified number of points that user has to remember
   printing(init_matrix);  //print it
   lcd.clear();
   lcd.setCursor(5,0);
