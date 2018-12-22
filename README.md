@@ -2,7 +2,7 @@
 ---
 This is a game made on Arduino Uno, called "*Test your memory*".
 ---
-**Game Components**:
+### Game Components:
 - Arduino Uno
 - Driver MAX7219
 - 8x8 Matrix Display 1088AS 
